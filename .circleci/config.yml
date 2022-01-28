@@ -1,0 +1,34 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "f0:85:86:da:00:7e:1f:0e:25:34:19:41:e2:80:4e:c0"
+      - run:
+          name: Github config
+          command: |
+            git config user.email "andrea.zecca3@studio.unibo.it"
+            git config user.name "AndreaZecca"
+      - run:
+          name: Deploy
+          command: | 
+            sed -i 's|const deploy = false|const deploy = true|' index.js
+            ssh-keyscan -H marullo.cs.unibo.it >> ~/.ssh/known_hosts
+            scp index.js andrea.zecca3@marullo.cs.unibo.it:/home/web/site202129/html/
+            scp package.json andrea.zecca3@marullo.cs.unibo.it:/home/web/site202129/html/
+            scp package-lock.json andrea.zecca3@marullo.cs.unibo.it:/home/web/site202129/html/
+            scp -r script/ andrea.zecca3@marullo.cs.unibo.it:/home/web/site202129/html/
+            
+      - run:
+          name: Install packages
+          command: |
+            ssh andrea.zecca3@marullo.cs.unibo.it "bash --login -c 'cd /home/web/site202129/html && npm install --only=production' "
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
